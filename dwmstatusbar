@@ -1,0 +1,45 @@
+#!/bin/sh
+netdevice="wlp3s0"
+
+while true; do
+# Battery -------------------------------------------------
+bcharging="$(acpi -b | cut -d, -f1 | cut -d' ' -f3)"
+bleft="$(acpi -b | cut -d, -f2 | cut -d' ' -f2)"
+
+if [ $bcharging = "Charging" ]
+then
+	bcharging="↑"
+else
+	bcharging="↓"
+fi
+# Internet ------------------------------------------------
+netstate="$(cat /sys/class/net/wlp3s0/operstate)"
+
+if [ $netstate = "up" ]
+then
+	netstate="↑"
+else
+	netstate="↓"
+fi
+
+# Volume --------------------------------------------------
+volume=$(amixer -D pulse get Master | awk -F 'Left:|[][]' 'BEGIN {RS=""}{ print $3 }')
+muted=$(amixer -D pulse get Master | awk -F 'Left:|[][]' 'BEGIN {RS=""}{ print $5 }')
+
+if [ $muted = "on" ]
+then
+	muted=""
+else
+	muted="x"
+fi
+
+# Date ----------------------------------------------------
+localdate="$(date '+%c')"
+
+# Ram -----------------------------------------------------
+ram=$(free -ht | awk 'NR==2{print $3 "/" $2}')
+
+# Final status bar
+xsetroot -name "$ram RAM | $netdevice $netstate | $muted $volume Volume | $bleft $bcharging Battery | $localdate"
+sleep 0.5
+done
